@@ -51,8 +51,9 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
         floatingActionButton: FloatingActionButton(
           onPressed: (){
-            showDialog(context: context, builder:
-                (BuildContext context){
+            showDialog(
+                context: context,
+                builder: (BuildContext context) {
                   return AlertDialog(
                     title: Text("Ajouter une tâche"),
                     content: TextField(
@@ -65,6 +66,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                     setState(() {
                                       todos.add(input);
                                 });
+                                    Navigator.of(context).pop();
                       }, child: Text("Ajouter"))
                     ]
                   );
@@ -77,12 +79,34 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
         body: ListView.builder(itemCount: todos.length,
             itemBuilder: (BuildContext context, int index){
-              return Dismissible(key: Key(todos[index]), child: Card(
+              return Dismissible(key: Key(todos[index]),
+                  direction: DismissDirection.startToEnd,
+                  child: Card(
+                    elevation: 4,
+                    margin: EdgeInsets.all(8),
+                    shape: RoundedRectangleBorder(borderRadius:
+                    BorderRadius.circular(8)),
                 child: ListTile(
                   title: Text(todos[index]),
-                  trailing: IconButton(icon: Icon(Icons.delete)),
+                  trailing: IconButton
+                    (icon: Icon(
+                      Icons.delete,
+                      color: Colors.red,
+                    ), 
+                      onPressed: () {
+                      setState(() {
+                        todos.removeAt(index);
+                      });
+                    },
+                  ),
                 ),
-              ));
+              ),
+                onDismissed: (direction) {
+                  if(direction == DismissDirection.startToEnd){
+                    todos.removeAt(index);
+                  }
+                },
+              );
             }),
       );
   }
