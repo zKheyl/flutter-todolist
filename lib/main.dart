@@ -14,7 +14,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         brightness: Brightness.light,
         primaryColor: Colors.blue,
-        accentColor: Colors.orange,
+        accentColor: Colors.green,
       ),
       home: MyHomePage(title: 'ToDo List'),
     );
@@ -32,7 +32,8 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   List todos = List();
   String input = "";
-
+  String inputModifierTodo = "";
+  List<bool> checkboxValue = new List<bool>();
   @override
   void initState() {
     // TODO: implement initState
@@ -41,6 +42,11 @@ class _MyHomePageState extends State<MyHomePage> {
     todos.add("test2");
     todos.add("test3");
     todos.add("test4");
+
+    checkboxValue.add(false);
+    checkboxValue.add(false);
+    checkboxValue.add(false);
+    checkboxValue.add(false);
   }
 
   @override
@@ -65,6 +71,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       FlatButton(onPressed: () {
                                     setState(() {
                                       todos.add(input);
+                                      checkboxValue.add(false);
                                 });
                                     Navigator.of(context).pop();
                       }, child: Text("Ajouter"))
@@ -86,24 +93,62 @@ class _MyHomePageState extends State<MyHomePage> {
                     margin: EdgeInsets.all(8),
                     shape: RoundedRectangleBorder(borderRadius:
                     BorderRadius.circular(8)),
-                child: ListTile(
-                  title: Text(todos[index]),
-                  trailing: IconButton
-                    (icon: Icon(
-                      Icons.delete,
-                      color: Colors.red,
-                    ), 
-                      onPressed: () {
-                      setState(() {
-                        todos.removeAt(index);
-                      });
-                    },
-                  ),
+                    child: ListTile(
+                      title: Text(todos[index]),
+                      trailing: Wrap(
+                        spacing: 30,
+                        children: <Widget>[
+                          Checkbox(value: checkboxValue[index], onChanged: (bool newValue) {
+                            setState(() {
+                              checkboxValue[index] = newValue;
+                            });
+                          }),
+                          IconButton
+                            (icon: Icon(
+                            Icons.delete,
+                            color: Colors.red,
+                          ),
+
+                            onPressed: () {
+                              setState(() {
+                                todos.removeAt(index);
+                                checkboxValue.removeAt(index);
+                              });
+                            },
+                          ),
+                        ],
+                      ),
+                      onLongPress: () {
+
+                      },
+                      onTap: () {
+                        showDialog(
+                            context: context,
+                            builder: (BuildContext context) {
+                              return AlertDialog(
+                                  title: Text("Modifier le nom de la tâche "),
+                                  content: TextField(
+                                    onChanged: (String value) {
+                                      input = value;
+                                    },
+                                  ),
+                                  actions: <Widget>[
+                                    FlatButton(onPressed: () {
+                                      setState(() {
+                                        todos[index] = input;
+                                      });
+                                      Navigator.of(context).pop();
+                                    }, child: Text("Modifier"))
+                                  ]
+                              );
+                            });
+                      },
                 ),
               ),
                 onDismissed: (direction) {
                   if(direction == DismissDirection.startToEnd){
                     todos.removeAt(index);
+                    checkboxValue.removeAt(index);
                   }
                 },
               );
