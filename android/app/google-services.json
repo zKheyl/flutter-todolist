@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "750215033428",
+    "firebase_url": "https://fbt-todol.firebaseio.com",
+    "project_id": "fbt-todol",
+    "storage_bucket": "fbt-todol.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:750215033428:android:9d68bffc2ded4c5e05b3c1",
+        "android_client_info": {
+          "package_name": "ch.hearc.flutter_todolist"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "750215033428-5fafmkmmme5svnm0u6nfvbkcgrhtn2qv.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCX3ZiMV0Y0DvSfsqrIiJIEUqdjcF3RkJ4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "750215033428-5fafmkmmme5svnm0u6nfvbkcgrhtn2qv.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "750215033428-gfbahflmhaaukl9uajkr370nn880249c.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "ch.hearc.flutterTodolist"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
