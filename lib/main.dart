@@ -8,39 +8,107 @@ void main() async {
   runApp(MyApp());
 }
 
-
 class MyApp extends StatelessWidget {
+  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Baby Names',
-      home: MyHomePage(),
+      debugShowCheckedModeBanner: false,
+      title: 'Flutter Demo',
+      theme: ThemeData(
+        brightness: Brightness.light,
+        primaryColor: Colors.blue,
+        accentColor: Colors.green,
+      ),
+      home: MyHomePage(title: 'ToDo List'),
     );
   }
 }
 
 class MyHomePage extends StatefulWidget {
+  MyHomePage({Key key, this.title}) : super(key: key);
+  final String title;
+
   @override
-  _MyHomePageState createState() {
-    return _MyHomePageState();
-  }
+  _MyHomePageState createState() => _MyHomePageState();
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  //List todos = List();
+  String input = "";
+  String inputModifierTodo = "";
+  //List<bool> checkboxValue = new List<bool>();
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    /*todos.add("test");
+    todos.add("test2");
+    todos.add("test3");
+    todos.add("test4");
+    checkboxValue.add(false);
+    checkboxValue.add(false);
+    checkboxValue.add(false);
+    checkboxValue.add(false);*/
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Baby Name Votes')),
-      body: _buildBody(context),
+        appBar: AppBar(title: Text('Mes todos')),
+        floatingActionButton: _floatingAddButton(),
+        body: _buildBody(context)
     );
+  }
+
+  Widget _floatingAddButton() {
+    String newValue = '';
+    return FloatingActionButton(
+        onPressed: (){
+          showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: Text("Ajouter une tâche"),
+                content: TextField(
+                  onChanged: (String value) {
+                    newValue = value;
+                  },
+                ),
+                actions: <Widget>[
+                  FlatButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        //todos.add(input);
+                        //checkboxValue.add(false);
+
+                        Firestore.instance.collection('todos').add({
+                          'name': newValue,
+                          'checked': false
+                        });
+                      },
+                      child: Text("Ajouter")
+                  )
+                ],
+              );
+            },
+          );
+        },
+        child: Icon(
+          Icons.add,
+          color: Colors.white,
+        )
+    );
+
   }
 
   Widget _buildBody(BuildContext context) {
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance.collection('baby').snapshots(),
+      stream: Firestore.instance.collection('todos').snapshots(),
       builder: (context, snapshot) {
         if (!snapshot.hasData) return LinearProgressIndicator();
-        return _buildList(context, snapshot.data.docs);
+
+        return _buildList(context, snapshot.data.documents);
       },
     );
   }
@@ -54,38 +122,88 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Widget _buildListItem(BuildContext context, DocumentSnapshot data) {
     final record = Record.fromSnapshot(data);
-    return Padding(
-      key: ValueKey(record.name),
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-      child: Container(
-        decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey),
-          borderRadius: BorderRadius.circular(5.0),
-        ),
+
+    return Dismissible(
+      key: Key(record.name),
+      direction: DismissDirection.startToEnd,
+      child: Card(
+        elevation: 4,
+        margin: EdgeInsets.all(8),
+        shape: RoundedRectangleBorder(borderRadius:
+        BorderRadius.circular(8)),
         child: ListTile(
           title: Text(record.name),
-          trailing: Text(record.votes.toString()),
-          onTap: () => print(record),
+          trailing: Wrap(
+            spacing: 30,
+            children: <Widget>[
+              Checkbox(value: record.checked, onChanged: (bool newValue) {
+                setState(() {
+                  record.reference.updateData({'checked': newValue});
+                });
+              }),
+              IconButton(
+                icon: Icon(
+                  Icons.delete,
+                  color: Colors.red,
+                ),
+                onPressed: () {
+                  setState(() {
+                    record.reference.delete();
+                  });
+                },
+              ),
+            ],
+          ),
+          onLongPress: () {},
+          onTap: () {
+            showDialog(
+                context: context,
+                builder: (BuildContext context) {
+                  return AlertDialog(
+                      title: Text("Modifier le nom de la tâche "),
+                      content: TextField(
+                        controller: TextEditingController()..text = record.name,
+                        onChanged: (String value) {
+                          record.reference.updateData({"name": value});
+                        },
+                      ),
+                      actions: <Widget>[
+                        FlatButton(onPressed: () {
+                          setState(() {
+                            record.name = input;
+                          });
+                          Navigator.of(context).pop();
+                        }, child: Text("Modifier"))
+                      ]
+                  );
+                });
+          },
         ),
       ),
+      onDismissed: (direction) {
+        if(direction == DismissDirection.startToEnd){
+          record.reference.delete();
+        }
+      },
     );
   }
 }
 
 class Record {
-  final String name;
-  final int votes;
+  String name;
+  //final int votes;
+  final bool checked;
   final DocumentReference reference;
 
   Record.fromMap(Map<String, dynamic> map, {this.reference})
       : assert(map['name'] != null),
-        assert(map['votes'] != null),
+        assert(map['checked'] != null),
         name = map['name'],
-        votes = map['votes'];
+        checked = map['checked'];
 
   Record.fromSnapshot(DocumentSnapshot snapshot)
       : this.fromMap(snapshot.data(), reference: snapshot.reference);
 
   @override
-  String toString() => "Record<$name:$votes>";
+  String toString() => "Record<$name:$checked>";
 }
