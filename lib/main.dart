@@ -34,14 +34,17 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+
   //List todos = List();
   String input = "";
   String inputModifierTodo = "";
   //List<bool> checkboxValue = new List<bool>();
+
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
+
     /*todos.add("test");
     todos.add("test2");
     todos.add("test3");
@@ -50,10 +53,12 @@ class _MyHomePageState extends State<MyHomePage> {
     checkboxValue.add(false);
     checkboxValue.add(false);
     checkboxValue.add(false);*/
+
   }
 
   @override
   Widget build(BuildContext context) {
+
     return Scaffold(
         appBar: AppBar(title: Text('Mes todos')),
         floatingActionButton: _floatingAddButton(),
@@ -188,6 +193,7 @@ class _MyHomePageState extends State<MyHomePage> {
         }
       },
     );
+
   }
 }
 
