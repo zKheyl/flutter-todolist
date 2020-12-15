@@ -133,17 +133,17 @@ class _MyHomePageState extends State<MyHomePage> {
         BorderRadius.circular(8)),
         child: ListTile(
           title: Text(record.name),
+          leading: Checkbox(value: record.checked, onChanged: (bool newValue) {
+            setState(() {
+              record.reference.updateData({'checked': newValue});
+            });
+          }),
           trailing: Wrap(
             spacing: 30,
             children: <Widget>[
-              Checkbox(value: record.checked, onChanged: (bool newValue) {
-                setState(() {
-                  record.reference.updateData({'checked': newValue});
-                });
-              }),
               IconButton(
                 icon: Icon(
-                  Icons.delete,
+                  Icons.edit,
                   color: Colors.red,
                 ),
                 onPressed: () {
@@ -154,7 +154,9 @@ class _MyHomePageState extends State<MyHomePage> {
               ),
             ],
           ),
-          onLongPress: () {},
+          onLongPress: () {
+            print("long press");
+          },
           onTap: () {
             showDialog(
                 context: context,
