@@ -1,6 +1,7 @@
-import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:date_field/date_field.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/material.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -34,10 +35,12 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-
   //List todos = List();
   String input = "";
   String inputModifierTodo = "";
+  Timestamp inputDate;
+  Timestamp dateAsTimeStamp;
+
   //List<bool> checkboxValue = new List<bool>();
 
   @override
@@ -53,33 +56,47 @@ class _MyHomePageState extends State<MyHomePage> {
     checkboxValue.add(false);
     checkboxValue.add(false);
     checkboxValue.add(false);*/
-
   }
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
         appBar: AppBar(title: Text('Mes todos')),
         floatingActionButton: _floatingAddButton(),
-        body: _buildBody(context)
-    );
+        body: _buildBody(context));
   }
+
+  DateTime selectedDate;
 
   Widget _floatingAddButton() {
     String newValue = '';
+
+    //TODO : Fix display date
+
     return FloatingActionButton(
-        onPressed: (){
+        onPressed: () {
           showDialog(
             context: context,
             builder: (BuildContext context) {
               return AlertDialog(
                 title: Text("Ajouter une tâche"),
-                content: TextField(
-                  onChanged: (String value) {
-                    newValue = value;
-                  },
-                ),
+                content: Wrap(spacing: 20, runSpacing: 20, children: [
+                  Text("Nom de la tâche"),
+                  TextField(
+                    onChanged: (String value) {
+                      newValue = value;
+                    },
+                  ),
+                  Text("Date limite"),
+                  DateTimeFormField(
+                    initialValue: DateTime(DateTime.now().year),
+                    onDateSelected: (DateTime date) {
+                      setState(() {
+                        selectedDate = date;
+                      });
+                    },
+                  )
+                ]),
                 actions: <Widget>[
                   FlatButton(
                       onPressed: () {
@@ -89,11 +106,11 @@ class _MyHomePageState extends State<MyHomePage> {
 
                         Firestore.instance.collection('todos').add({
                           'name': newValue,
-                          'checked': false
+                          'checked': false,
+                          'endDate': selectedDate
                         });
                       },
-                      child: Text("Ajouter")
-                  )
+                      child: Text("Ajouter"))
                 ],
               );
             },
@@ -102,9 +119,7 @@ class _MyHomePageState extends State<MyHomePage> {
         child: Icon(
           Icons.add,
           color: Colors.white,
-        )
-    );
-
+        ));
   }
 
   Widget _buildBody(BuildContext context) {
@@ -134,15 +149,16 @@ class _MyHomePageState extends State<MyHomePage> {
       child: Card(
         elevation: 4,
         margin: EdgeInsets.all(8),
-        shape: RoundedRectangleBorder(borderRadius:
-        BorderRadius.circular(8)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         child: ListTile(
           title: Text(record.name),
-          leading: Checkbox(value: record.checked, onChanged: (bool newValue) {
-            setState(() {
-              record.reference.updateData({'checked': newValue});
-            });
-          }),
+          leading: Checkbox(
+              value: record.checked,
+              onChanged: (bool newValue) {
+                setState(() {
+                  record.reference.updateData({'checked': newValue});
+                });
+              }),
           trailing: Wrap(
             spacing: 30,
             children: <Widget>[
@@ -168,46 +184,69 @@ class _MyHomePageState extends State<MyHomePage> {
                 builder: (BuildContext context) {
                   return AlertDialog(
                       title: Text("Modifier le nom de la tâche "),
-                      content: TextField(
-                        controller: TextEditingController()..text = record.name,
-                        onChanged: (String value) {
-                          record.reference.updateData({"name": value});
-                        },
+                      content: Wrap(
+                        spacing: 20,
+                        runSpacing: 20,
+                        children: [
+                          Text("Nom de la tâche"),
+                          TextField(
+                            controller: TextEditingController()
+                              ..text = record.name,
+                            onChanged: (String value) {
+                              record.reference.updateData({"name": value});
+                            },
+                          ),
+                          Text("Date limite"),
+                          DateTimeFormField(
+                              initialValue: DateTime(DateTime.now().year),
+                              onDateSelected: (DateTime date) {
+                                setState(() {
+                                  selectedDate = date;
+                                  dateAsTimeStamp = Timestamp.fromDate(date);
+                                  record.reference
+                                      .updateData({"endDate": dateAsTimeStamp});
+                                });
+                              })
+                        ],
                       ),
                       actions: <Widget>[
-                        FlatButton(onPressed: () {
-                          setState(() {
-                            record.name = input;
-                          });
-                          Navigator.of(context).pop();
-                        }, child: Text("Modifier"))
-                      ]
-                  );
+                        FlatButton(
+                            onPressed: () {
+                              setState(() {
+                                record.name = input;
+                                record.endDate = inputDate;
+                              });
+                              Navigator.of(context).pop();
+                            },
+                            child: Text("Modifier"))
+                      ]);
                 });
           },
         ),
       ),
       onDismissed: (direction) {
-        if(direction == DismissDirection.startToEnd){
+        if (direction == DismissDirection.startToEnd) {
           record.reference.delete();
         }
       },
     );
-
   }
 }
 
 class Record {
   String name;
+
   //final int votes;
   final bool checked;
   final DocumentReference reference;
+  Timestamp endDate;
 
   Record.fromMap(Map<String, dynamic> map, {this.reference})
       : assert(map['name'] != null),
         assert(map['checked'] != null),
         name = map['name'],
-        checked = map['checked'];
+        checked = map['checked'],
+        endDate = map['endDate'];
 
   Record.fromSnapshot(DocumentSnapshot snapshot)
       : this.fromMap(snapshot.data(), reference: snapshot.reference);
