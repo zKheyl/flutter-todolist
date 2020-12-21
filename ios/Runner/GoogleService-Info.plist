@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>750215033428-gfbahflmhaaukl9uajkr370nn880249c.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.750215033428-gfbahflmhaaukl9uajkr370nn880249c</string>
+	<key>API_KEY</key>
+	<string>AIzaSyBRkQZV1xrdME5cxMwPzgCAgjlW5Rf7dos</string>
+	<key>GCM_SENDER_ID</key>
+	<string>750215033428</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>ch.hearc.flutterTodolist</string>
+	<key>PROJECT_ID</key>
+	<string>fbt-todol</string>
+	<key>STORAGE_BUCKET</key>
+	<string>fbt-todol.appspot.com</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:750215033428:ios:20c3350c45d0441b05b3c1</string>
+	<key>DATABASE_URL</key>
+	<string>https://fbt-todol.firebaseio.com</string>
+</dict>
+</plist>
