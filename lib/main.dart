@@ -1,7 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:date_field/date_field.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -48,35 +51,51 @@ class _ListsPageState extends State<ListsPage> {
     return Scaffold(
         appBar: AppBar(title: Text('Mes listes')),
         floatingActionButton: _floatingAddButton(),
-        body: _buildBody(context)
-    );
+        body: _buildBody(context));
   }
 
+  DateTime selectedDate;
+  DateFormat newFormat = DateFormat("dd.MM.yyyy");
+  
   Widget _floatingAddButton() {
     String newValue = '';
+
+    //TODO : Fix display date
+
     return FloatingActionButton(
-        onPressed: (){
+        onPressed: () {
           showDialog(
             context: context,
             builder: (BuildContext context) {
               return AlertDialog(
                 title: Text("Ajouter une liste"),
-
-                content: TextField(
-                  onChanged: (String value) {
-                    newValue = value;
-                  },
-                ),
+                content: Wrap(spacing: 20, runSpacing: 20, children: [
+                  Text("Nom de la tâche"),
+                  TextField(
+                    onChanged: (String value) {
+                      newValue = value;
+                    },
+                  ),
+                  Text("Date limite"),
+                  DateTimeFormField(
+                    initialValue: DateTime(DateTime.now().year),
+                    onDateSelected: (DateTime date) {
+                      setState(() {
+                        selectedDate = date;
+                      });
+                    },
+                  )
+                ]),
                 actions: <Widget>[
                   FlatButton(
                       onPressed: () {
                         Navigator.of(context).pop();
                         Firestore.instance.collection('todolists').add({
                           'name': newValue,
+                          'endDate': selectedDate
                         });
                       },
-                      child: Text("Ajouter")
-                  )
+                      child: Text("Ajouter"))
                 ],
               );
             },
@@ -85,9 +104,7 @@ class _ListsPageState extends State<ListsPage> {
         child: Icon(
           Icons.add,
           color: Colors.white,
-        )
-    );
-
+        ));
   }
 
   Widget _buildBody(BuildContext context) {
@@ -117,10 +134,17 @@ class _ListsPageState extends State<ListsPage> {
       child: Card(
         elevation: 4,
         margin: EdgeInsets.all(8),
-        shape: RoundedRectangleBorder(borderRadius:
-        BorderRadius.circular(8)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         child: ListTile(
           title: Text(record.name),
+          subtitle: Text(newFormat.format(DateTime.parse(record.endDate.toDate().toString()))),
+          leading: Checkbox(
+              value: record.checked,
+              onChanged: (bool newValue) {
+                setState(() {
+                  record.reference.updateData({'checked': newValue});
+                });
+              }),
           trailing: Wrap(
             spacing: 30,
             children: <Widget>[
@@ -214,10 +238,26 @@ class _TodosPageState extends State<TodosPage> {
                 builder: (BuildContext context) {
                   return AlertDialog(
                       title: Text("Ajouter une tâche"),
-                      content: TextField(
-                        onChanged: (String value) {
-                          newValue = value;
-                        },
+                      content: Wrap(spacing: 20, runSpacing: 20, children: [
+                        Text("Nom de la tâche"),
+                        TextField(
+                          onChanged: (String value) {
+                            newValue = value;
+                          },
+                        )
+                      ]
+                    )
+                  ),
+                  Text("Date limite"),
+                  DateTimeFormField(
+                    initialValue: DateTime(DateTime.now().year),
+                    onDateSelected: (DateTime date) {
+                      setState(() {
+                        selectedDate = date;
+                      });
+                    },
+                  )
+                ]),
                       ),
                       actions: <Widget>[
                         FlatButton(
@@ -303,27 +343,48 @@ class _TodosPageState extends State<TodosPage> {
                 builder: (BuildContext context) {
                   return AlertDialog(
                       title: Text("Modifier le nom de la tâche "),
-                      content: TextField(
-                        controller: TextEditingController()..text = record.name,
-                        onChanged: (String value) {
-                          record.reference.updateData({"name": value});
-                        },
+                      content: Wrap(
+                        spacing: 20,
+                        runSpacing: 20,
+                        children: [
+                          Text("Nom de la tâche"),
+                          TextField(
+                            controller: TextEditingController()
+                              ..text = record.name,
+                            onChanged: (String value) {
+                              record.reference.updateData({"name": value});
+                            },
+                          ),
+                          Text("Date limite"),
+                          DateTimeFormField(
+                              initialValue: DateTime.parse(record.endDate.toDate().toString()),
+                              onDateSelected: (DateTime date) {
+                                setState(() {
+                                  selectedDate = date;
+                                  dateAsTimeStamp = Timestamp.fromDate(date);
+                                  record.reference
+                                      .updateData({"endDate": dateAsTimeStamp});
+                                });
+                              })
+                        ],
                       ),
                       actions: <Widget>[
-                        FlatButton(onPressed: () {
-                          setState(() {
-                            record.name = input;
-                          });
-                          Navigator.of(context).pop();
-                        }, child: Text("Modifier"))
-                      ]
-                  );
+                        FlatButton(
+                            onPressed: () {
+                              setState(() {
+                                record.name = input;
+                                record.endDate = inputDate ;
+                              });
+                              Navigator.of(context).pop();
+                            },
+                            child: Text("Modifier"))
+                      ]);
                 });
           },
         ),
       ),
       onDismissed: (direction) {
-        if(direction == DismissDirection.startToEnd){
+        if (direction == DismissDirection.startToEnd) {
           record.reference.delete();
         }
       },
@@ -356,18 +417,20 @@ class TodoRecord {
   String name;
   final bool checked;
   final DocumentReference reference;
+  Timestamp endDate;
 
   TodoRecord.fromMap(Map<String, dynamic> map, {this.reference})
 
       : assert(map['name'] != null),
         assert(map['checked'] != null),
         name = map['name'],
-        checked = map['checked'];
+        checked = map['checked'],
+        endDate = map['endDate'];
 
 firebase-integration-ios
   TodoRecord.fromSnapshot(DocumentSnapshot snapshot)
       : this.fromMap(snapshot.data, reference: snapshot.reference);
 
   @override
-  String toString() => "Record<$name:$checked>";
+  String toString() => "Record<$name:$checked$endDate>";
 }
