@@ -1,7 +1,13 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_core/firebase_core.dart';
 
-void main() => runApp(MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+  runApp(MyApp());
+}
 
 class MyApp extends StatelessWidget {
   // This widget is the root of your application.
@@ -31,6 +37,7 @@ class ListsPage extends StatefulWidget {
 class _ListsPageState extends State<ListsPage> {
   String input = "";
   String inputModifierTodo = "";
+
   @override
   void initState() {
     super.initState();
@@ -54,6 +61,7 @@ class _ListsPageState extends State<ListsPage> {
             builder: (BuildContext context) {
               return AlertDialog(
                 title: Text("Ajouter une liste"),
+
                 content: TextField(
                   onChanged: (String value) {
                     newValue = value;
@@ -63,7 +71,6 @@ class _ListsPageState extends State<ListsPage> {
                   FlatButton(
                       onPressed: () {
                         Navigator.of(context).pop();
-
                         Firestore.instance.collection('todolists').add({
                           'name': newValue,
                         });
@@ -351,11 +358,13 @@ class TodoRecord {
   final DocumentReference reference;
 
   TodoRecord.fromMap(Map<String, dynamic> map, {this.reference})
+
       : assert(map['name'] != null),
         assert(map['checked'] != null),
         name = map['name'],
         checked = map['checked'];
 
+firebase-integration-ios
   TodoRecord.fromSnapshot(DocumentSnapshot snapshot)
       : this.fromMap(snapshot.data, reference: snapshot.reference);
 
