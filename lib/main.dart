@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:date_field/date_field.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -67,7 +68,8 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   DateTime selectedDate;
-
+  DateFormat newFormat = DateFormat("dd.MM.yyyy");
+  
   Widget _floatingAddButton() {
     String newValue = '';
 
@@ -152,7 +154,7 @@ class _MyHomePageState extends State<MyHomePage> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         child: ListTile(
           title: Text(record.name),
-          subtitle: Text(record.endDate.toString()),
+          subtitle: Text(newFormat.format(DateTime.parse(record.endDate.toDate().toString()))),
           leading: Checkbox(
               value: record.checked,
               onChanged: (bool newValue) {
