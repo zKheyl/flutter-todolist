@@ -40,6 +40,9 @@ class ListsPage extends StatefulWidget {
 class _ListsPageState extends State<ListsPage> {
   String input = "";
   String inputModifierTodo = "";
+  DateTime inputDate;
+  Timestamp dateAsTimeStamp;
+
 
   @override
   void initState() {
@@ -128,6 +131,7 @@ class _ListsPageState extends State<ListsPage> {
   Widget _buildListItem(BuildContext context, DocumentSnapshot data) {
     final record = ListRecord.fromSnapshot(data);
 
+
     return Dismissible(
       key: Key(record.name),
       direction: DismissDirection.startToEnd,
@@ -137,14 +141,14 @@ class _ListsPageState extends State<ListsPage> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         child: ListTile(
           title: Text(record.name),
-          subtitle: Text(newFormat.format(DateTime.parse(record.endDate.toDate().toString()))),
-          leading: Checkbox(
-              value: record.checked,
-              onChanged: (bool newValue) {
-                setState(() {
-                  record.reference.updateData({'checked': newValue});
-                });
-              }),
+          //subtitle: Text(newFormat.format(DateTime.parse(record.dateFin.toDate().toString()))),
+          // leading: Checkbox(
+          //    // value: record..checked,
+          //     onChanged: (bool newValue) {
+          //       setState(() {
+          //         record.reference.updateData({'checked': newValue});
+          //       });
+          //     }),
           trailing: Wrap(
             spacing: 30,
             children: <Widget>[
@@ -167,11 +171,29 @@ class _ListsPageState extends State<ListsPage> {
               builder: (BuildContext context) {
                 return AlertDialog(
                     title: Text("Modifier le nom de la liste "),
-                    content: TextField(
+                    content:
+                    Wrap(
+                    spacing: 20,
+                      runSpacing: 20,
+                      children :[
+                        TextField(
                       controller: TextEditingController()..text = record.name,
                       onChanged: (String value) {
                         record.reference.updateData({"name": value});
                       },
+                    ),
+                        Text("Date limite"),
+                        DateTimeFormField(
+                            initialValue: DateTime.parse(record.dateFin.toDate().toString()),
+                            onDateSelected: (DateTime date) {
+                              setState(() {
+                                selectedDate = date;
+                                dateAsTimeStamp = Timestamp.fromDate(date);
+                                record.reference
+                                    .updateData({"endDate": dateAsTimeStamp});
+                              });
+                            })
+                    ]
                     ),
                     actions: <Widget>[
                       FlatButton(onPressed: () {
@@ -215,6 +237,9 @@ class _TodosPageState extends State<TodosPage> {
   final ListRecord record;
   String input = "";
   String inputModifierTodo = "";
+  Timestamp inputDate;
+  DateTime selectedDate;
+  Timestamp dateAsTimeStamp;
   @override
   void initState() {
     super.initState();
@@ -238,15 +263,15 @@ class _TodosPageState extends State<TodosPage> {
                 builder: (BuildContext context) {
                   return AlertDialog(
                       title: Text("Ajouter une tâche"),
-                      content: Wrap(spacing: 20, runSpacing: 20, children: [
+                      content: Wrap(
+                          spacing: 20,
+                          runSpacing: 20,
+                          children: [
                         Text("Nom de la tâche"),
                         TextField(
                           onChanged: (String value) {
                             newValue = value;
                           },
-                        )
-                      ]
-                    )
                   ),
                   Text("Date limite"),
                   DateTimeFormField(
@@ -258,7 +283,6 @@ class _TodosPageState extends State<TodosPage> {
                     },
                   )
                 ]),
-                      ),
                       actions: <Widget>[
                         FlatButton(
                           onPressed: () {
@@ -404,10 +428,10 @@ class ListRecord {
         //assert(map['date_fin'] != null),
         name = map['name'],
         color = map['color'],
-        dateFin = map['date_fin'];
+        dateFin = map['endDate'];
 
   ListRecord.fromSnapshot(DocumentSnapshot snapshot)
-      : this.fromMap(snapshot.data, reference: snapshot.reference);
+      : this.fromMap(snapshot.data(), reference: snapshot.reference);
 
   @override
   String toString() => "Record<$name:$color:$dateFin>";
@@ -427,9 +451,9 @@ class TodoRecord {
         checked = map['checked'],
         endDate = map['endDate'];
 
-firebase-integration-ios
+
   TodoRecord.fromSnapshot(DocumentSnapshot snapshot)
-      : this.fromMap(snapshot.data, reference: snapshot.reference);
+      : this.fromMap(snapshot.data(), reference: snapshot.reference);
 
   @override
   String toString() => "Record<$name:$checked$endDate>";
