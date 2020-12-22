@@ -152,6 +152,7 @@ class _MyHomePageState extends State<MyHomePage> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         child: ListTile(
           title: Text(record.name),
+          subtitle: Text(record.endDate.toString()),
           leading: Checkbox(
               value: record.checked,
               onChanged: (bool newValue) {
@@ -198,7 +199,7 @@ class _MyHomePageState extends State<MyHomePage> {
                           ),
                           Text("Date limite"),
                           DateTimeFormField(
-                              initialValue: DateTime(DateTime.now().year),
+                              initialValue: DateTime.parse(record.endDate.toDate().toString()),
                               onDateSelected: (DateTime date) {
                                 setState(() {
                                   selectedDate = date;
@@ -214,7 +215,7 @@ class _MyHomePageState extends State<MyHomePage> {
                             onPressed: () {
                               setState(() {
                                 record.name = input;
-                                record.endDate = inputDate;
+                                record.endDate = inputDate ;
                               });
                               Navigator.of(context).pop();
                             },
@@ -252,5 +253,5 @@ class Record {
       : this.fromMap(snapshot.data(), reference: snapshot.reference);
 
   @override
-  String toString() => "Record<$name:$checked>";
+  String toString() => "Record<$name:$checked$endDate>";
 }
