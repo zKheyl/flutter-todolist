@@ -327,6 +327,7 @@ class _TodosPageState extends State<TodosPage> {
   }
 
   Widget _buildListItem(BuildContext context, DocumentSnapshot data) {
+    DateFormat newFormat = DateFormat("dd.MM.yyyy");
     final record = TodoRecord.fromSnapshot(data);
 
       return Dismissible(
@@ -372,6 +373,7 @@ class _TodosPageState extends State<TodosPage> {
                         runSpacing: 20,
                         children: [
                           Text("Nom de la tâche"),
+
                           TextField(
                             controller: TextEditingController()
                               ..text = record.name,
