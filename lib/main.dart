@@ -193,18 +193,18 @@ class _ListsPageState extends State<ListsPage> {
                                         tags.add(value);
                                         _textController.clear();
                                         setState(() {});
-
                                       },
                                     ),
                                   ]),
                               actions: <Widget>[
-                                FlatButton(onPressed: () {
-
-                                  /*setState(() {
-                                    record.name = input;
-                                  });
-                                  Navigator.of(context).pop();*/
-                                }, child: Text("Ajouter"))
+                                FlatButton(
+                                  onPressed: () {
+                                    if(_textController.text.toString() != ''){
+                                      tags.add(_textController.text.toString());
+                                      _textController.clear();
+                                      setState(() {});
+                                    }
+                                  }, child: Text("Ajouter"))
                               ],
                           );
                       });
