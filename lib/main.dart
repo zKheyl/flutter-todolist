@@ -1,8 +1,12 @@
+import 'dart:collection';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:date_field/date_field.dart';
 import 'package:intl/intl.dart';
+
+import 'flutter_tag_view.dart';
 
 
 void main() async {
@@ -61,8 +65,6 @@ class _ListsPageState extends State<ListsPage> {
   
   Widget _floatingAddButton() {
     String newValue = '';
-
-    //TODO : Fix display date
 
     return FloatingActionButton(
         onPressed: () {
@@ -129,7 +131,9 @@ class _ListsPageState extends State<ListsPage> {
 
   Widget _buildListItem(BuildContext context, DocumentSnapshot data) {
     final record = ListRecord.fromSnapshot(data);
-
+    List<String> tags = <String>[];
+    tags.add("tag 1");
+    TextEditingController _textController = new TextEditingController();
 
     return Dismissible(
       key: Key(record.name),
@@ -152,6 +156,59 @@ class _ListsPageState extends State<ListsPage> {
           trailing: Wrap(
             spacing: 30,
             children: <Widget>[
+              IconButton(
+                icon: Icon(
+                    Icons.assignment,
+                    color: Colors.black,
+                ),
+                onPressed: (){
+                  showDialog(
+                      context: context,
+                      builder: (BuildContext context)
+                  {
+                    return StatefulBuilder(
+                        builder: (context, setState) {
+                          return AlertDialog(
+                              title: Text("Modifier les tags"),
+                              content:
+                              Wrap(
+                                  spacing: 20,
+                                  runSpacing: 20,
+                                  children: [
+                                    FlutterTagView(
+                                      tags: tags,
+                                      maxTagViewHeight: 100,
+                                      deletableTag: true,
+                                      /*onDeleteTag: tagDeleted,
+                                      tagTitle: FlutterTagView.tagTitle,*/
+                                    ),
+                                    TextField(
+                                      controller: _textController,
+                                      decoration: InputDecoration(
+                                        hintText: 'Nouveau tag',
+                                      ),
+                                      onSubmitted: (String value) {
+                                        tags.add(value);
+                                        _textController.clear();
+                                        setState(() {});
+
+                                      },
+                                    ),
+                                  ]),
+                              actions: <Widget>[
+                                FlatButton(onPressed: () {
+
+                                  /*setState(() {
+                                    record.name = input;
+                                  });
+                                  Navigator.of(context).pop();*/
+                                }, child: Text("Ajouter"))
+                              ]
+                          );
+                      });
+                  });
+                },
+              ),
               IconButton(
                 icon: Icon(
                   Icons.delete,
@@ -177,11 +234,11 @@ class _ListsPageState extends State<ListsPage> {
                       runSpacing: 20,
                       children :[
                         TextField(
-                      controller: TextEditingController()..text = record.name,
-                      onChanged: (String value) {
-                        record.reference.updateData({"name": value});
-                      },
-                    ),
+                          controller: TextEditingController()..text = record.name,
+                          onChanged: (String value) {
+                            record.reference.updateData({"name": value});
+                          },
+                        ),
                         Text("Date limite"),
                         DateTimeFormField(
                             initialValue: DateTime.parse(record.dateFin.toDate().toString()),
@@ -192,8 +249,8 @@ class _ListsPageState extends State<ListsPage> {
                                 record.reference
                                     .updateData({"endDate": dateAsTimeStamp});
                               });
-                            })
-                    ]
+                        })
+                      ]
                     ),
                     actions: <Widget>[
                       FlatButton(onPressed: () {
@@ -423,15 +480,15 @@ class ListRecord {
   String name;
   String color;
   Timestamp dateFin;
+  List<dynamic> tags = new List();
   final DocumentReference reference;
 
   ListRecord.fromMap(Map<String, dynamic> map, {this.reference})
       : assert(map['name'] != null),
-        //assert(map['color'] != null),
-        //assert(map['date_fin'] != null),
         name = map['name'],
         color = map['color'],
-        dateFin = map['endDate'];
+        dateFin = map['endDate'],
+        tags = map['tags'];
 
   ListRecord.fromSnapshot(DocumentSnapshot snapshot)
       : this.fromMap(snapshot.data(), reference: snapshot.reference);
