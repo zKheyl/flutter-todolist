@@ -82,7 +82,6 @@ class _ListsPageState extends State<ListsPage> {
                   ),
                   Text("Date limite"),
                   DateTimeFormField(
-                    initialValue: DateTime(DateTime.now().year),
                     onDateSelected: (DateTime date) {
                       setState(() {
                         selectedDate = date;
@@ -94,7 +93,7 @@ class _ListsPageState extends State<ListsPage> {
                   FlatButton(
                       onPressed: () {
                         Navigator.of(context).pop();
-                        Firestore.instance.collection('todolists').add({ //liste de todo
+                        FirebaseFirestore.instance.collection('todolists').add({ //liste de todo
                           'name': newValue,
                           'endDate': selectedDate
                         });
@@ -113,7 +112,7 @@ class _ListsPageState extends State<ListsPage> {
 
   Widget _buildBody(BuildContext context) {
     return StreamBuilder<QuerySnapshot>(
-      stream: Firestore.instance.collection('todolists').snapshots(),
+      stream: FirebaseFirestore.instance.collection('todolists').snapshots(),
       builder: (context, snapshot) {
         if (!snapshot.hasData) return LinearProgressIndicator();
 
@@ -132,7 +131,14 @@ class _ListsPageState extends State<ListsPage> {
   Widget _buildListItem(BuildContext context, DocumentSnapshot data) {
     final record = ListRecord.fromSnapshot(data);
     List<String> tags = <String>[];
-    tags.add("tag 1");
+    String endDate = record.dateFin != null ? newFormat.format(DateTime.parse(record.dateFin.toDate().toString())) : '';
+
+    if (record.tags != null){
+      for(int i = 0; i < record.tags.length; i++){
+        tags.add(record.tags[i].toString());
+      }
+    }
+
     TextEditingController _textController = new TextEditingController();
 
     return Dismissible(
@@ -144,21 +150,13 @@ class _ListsPageState extends State<ListsPage> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         child: ListTile(
           title: Text(record.name),
-          subtitle: Text(newFormat.format(DateTime.parse(record.dateFin.toDate().toString()))), //Niveau List
-          //subtitle: Text(newFormat.format(DateTime.parse(record.dateFin.toDate().toString()))),
-          // leading: Checkbox(
-          //    // value: record..checked,
-          //     onChanged: (bool newValue) {
-          //       setState(() {
-          //         record.reference.updateData({'checked': newValue});
-          //       });
-          //     }),
+          subtitle: Text(endDate), //Niveau List
           trailing: Wrap(
             spacing: 30,
             children: <Widget>[
               IconButton(
                 icon: Icon(
-                    Icons.assignment,
+                    Icons.label_outlined,
                     color: Colors.black,
                 ),
                 onPressed: (){
@@ -179,8 +177,12 @@ class _ListsPageState extends State<ListsPage> {
                                       tags: tags,
                                       maxTagViewHeight: 100,
                                       deletableTag: true,
-                                      /*onDeleteTag: tagDeleted,
-                                      tagTitle: FlutterTagView.tagTitle,*/
+                                      onDeleteTag: (i) {
+                                        tags.removeAt(i);
+                                        record.reference.update({"tags": tags});
+                                        setState(() {});
+                                      },
+                                      /*tagTitle: FlutterTagView.tagTitle,*/
                                     ),
                                     TextField(
                                       controller: _textController,
@@ -203,7 +205,7 @@ class _ListsPageState extends State<ListsPage> {
                                   });
                                   Navigator.of(context).pop();*/
                                 }, child: Text("Ajouter"))
-                              ]
+                              ],
                           );
                       });
                   });
@@ -236,18 +238,18 @@ class _ListsPageState extends State<ListsPage> {
                         TextField(
                           controller: TextEditingController()..text = record.name,
                           onChanged: (String value) {
-                            record.reference.updateData({"name": value});
+                            record.reference.update({"name": value});
                           },
                         ),
                         Text("Date limite"),
                         DateTimeFormField(
-                            initialValue: DateTime.parse(record.dateFin.toDate().toString()),
+                            initialValue: record.dateFin != null ? DateTime.parse(record.dateFin.toDate().toString()) : null,
                             onDateSelected: (DateTime date) {
                               setState(() {
                                 selectedDate = date;
                                 dateAsTimeStamp = Timestamp.fromDate(date);
                                 record.reference
-                                    .updateData({"endDate": dateAsTimeStamp});
+                                    .update({"endDate": dateAsTimeStamp});
                               });
                         })
                       ]
@@ -297,6 +299,7 @@ class _TodosPageState extends State<TodosPage> {
   Timestamp inputDate;
   DateTime selectedDate;
   Timestamp dateAsTimeStamp;
+
   @override
   void initState() {
     super.initState();
@@ -333,7 +336,6 @@ class _TodosPageState extends State<TodosPage> {
                   ),
                   Text("Date limite"),
                   DateTimeFormField(
-                    initialValue: DateTime(DateTime.now().year),
                     onDateSelected: (DateTime date) {
                       setState(() {
                         selectedDate = date;
@@ -341,19 +343,19 @@ class _TodosPageState extends State<TodosPage> {
                     },
                   )
                 ]),
-                      actions: <Widget>[
-                        FlatButton(
-                          onPressed: () {
-                            Navigator.of(context).pop();
-
-                            record.reference.collection('todos').add({
-                                  'name': newValue,
-                                  'checked': false
-                                });
-                            },
-                          child: Text("Ajouter")
-                        )
-                      ],
+                  actions: <Widget>[
+                    FlatButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        record.reference.collection('todos').add({
+                              'name': newValue,
+                              'checked': false,
+                              'endDate': selectedDate
+                            });
+                        },
+                      child: Text("Ajouter")
+                    )
+                  ],
                   );
                 },
             );
@@ -387,6 +389,7 @@ class _TodosPageState extends State<TodosPage> {
   Widget _buildListItem(BuildContext context, DocumentSnapshot data) {
     DateFormat newFormat = DateFormat("dd.MM.yyyy");
     final record = TodoRecord.fromSnapshot(data);
+    String endDate = record.endDate != null ? newFormat.format(DateTime.parse(record.endDate.toDate().toString())) : '';
 
       return Dismissible(
           key: Key(record.name),
@@ -398,13 +401,13 @@ class _TodosPageState extends State<TodosPage> {
             BorderRadius.circular(8)),
             child: ListTile(
               title: Text(record.name),
-              subtitle: Text(newFormat.format(DateTime.parse(record.endDate.toDate().toString()))), //Niveau tâche ?
+              subtitle: Text(endDate), //Niveau tâche ?
               trailing: Wrap(
                 spacing: 30,
                 children: <Widget>[
                   Checkbox(value: record.checked, onChanged: (bool newValue) {
                     setState(() {
-                     record.reference.updateData({'checked': newValue});
+                     record.reference.update({'checked': newValue});
                     });
                   }),
                   IconButton(
@@ -436,18 +439,18 @@ class _TodosPageState extends State<TodosPage> {
                             controller: TextEditingController()
                               ..text = record.name,
                             onChanged: (String value) {
-                              record.reference.updateData({"name": value});
+                              record.reference.update({"name": value});
                             },
                           ),
                           Text("Date limite"),
                           DateTimeFormField(
-                              initialValue: DateTime.parse(record.endDate.toDate().toString()),
+                              initialValue: record.endDate != null ? DateTime.parse(record.endDate.toDate().toString()) : null,
                               onDateSelected: (DateTime date) {
                                 setState(() {
                                   selectedDate = date;
                                   dateAsTimeStamp = Timestamp.fromDate(date);
                                   record.reference
-                                      .updateData({"endDate": dateAsTimeStamp});
+                                      .update({"endDate": dateAsTimeStamp});
                                 });
                               })
                         ],
