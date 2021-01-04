@@ -93,7 +93,7 @@ class _ListsPageState extends State<ListsPage> {
                   FlatButton(
                       onPressed: () {
                         Navigator.of(context).pop();
-                        Firestore.instance.collection('todolists').add({
+                        Firestore.instance.collection('todolists').add({ //liste de todo
                           'name': newValue,
                           'endDate': selectedDate
                         });
@@ -141,6 +141,7 @@ class _ListsPageState extends State<ListsPage> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         child: ListTile(
           title: Text(record.name),
+          subtitle: Text(newFormat.format(DateTime.parse(record.dateFin.toDate().toString()))), //Niveau List
           //subtitle: Text(newFormat.format(DateTime.parse(record.dateFin.toDate().toString()))),
           // leading: Checkbox(
           //    // value: record..checked,
@@ -263,6 +264,7 @@ class _TodosPageState extends State<TodosPage> {
                 builder: (BuildContext context) {
                   return AlertDialog(
                       title: Text("Ajouter une tâche"),
+
                       content: Wrap(
                           spacing: 20,
                           runSpacing: 20,
@@ -340,6 +342,7 @@ class _TodosPageState extends State<TodosPage> {
             BorderRadius.circular(8)),
             child: ListTile(
               title: Text(record.name),
+              subtitle: Text(newFormat.format(DateTime.parse(record.endDate.toDate().toString()))), //Niveau tâche ?
               trailing: Wrap(
                 spacing: 30,
                 children: <Widget>[
@@ -373,7 +376,6 @@ class _TodosPageState extends State<TodosPage> {
                         runSpacing: 20,
                         children: [
                           Text("Nom de la tâche"),
-
                           TextField(
                             controller: TextEditingController()
                               ..text = record.name,
