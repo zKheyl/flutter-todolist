@@ -1,10 +1,13 @@
+import 'dart:collection';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:date_field/date_field.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:date_field/date_field.dart';
 import 'package:intl/intl.dart';
+
+import 'flutter_tag_view.dart';
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -63,8 +66,6 @@ class _ListsPageState extends State<ListsPage> {
   Widget _floatingAddButton() {
     String newValue = '';
 
-    //TODO : Fix display date
-
     return FloatingActionButton(
         onPressed: () {
           showDialog(
@@ -81,7 +82,6 @@ class _ListsPageState extends State<ListsPage> {
                   ),
                   Text("Date limite"),
                   DateTimeFormField(
-                    initialValue: DateTime(DateTime.now().year),
                     onDateSelected: (DateTime date) {
                       setState(() {
                         selectedDate = date;
@@ -93,7 +93,7 @@ class _ListsPageState extends State<ListsPage> {
                   FlatButton(
                       onPressed: () {
                         Navigator.of(context).pop();
-                        Firestore.instance.collection('todolists').add({ //liste de todo
+                        FirebaseFirestore.instance.collection('todolists').add({ //liste de todo
                           'name': newValue,
                           'endDate': selectedDate
                         });
@@ -112,7 +112,7 @@ class _ListsPageState extends State<ListsPage> {
 
   Widget _buildBody(BuildContext context) {
     return StreamBuilder<QuerySnapshot>(
-      stream: Firestore.instance.collection('todolists').snapshots(),
+      stream: FirebaseFirestore.instance.collection('todolists').snapshots(),
       builder: (context, snapshot) {
         if (!snapshot.hasData) return LinearProgressIndicator();
 
@@ -130,7 +130,16 @@ class _ListsPageState extends State<ListsPage> {
 
   Widget _buildListItem(BuildContext context, DocumentSnapshot data) {
     final record = ListRecord.fromSnapshot(data);
+    List<String> tags = <String>[];
+    String endDate = record.dateFin != null ? newFormat.format(DateTime.parse(record.dateFin.toDate().toString())) : '';
 
+    if (record.tags != null){
+      for(int i = 0; i < record.tags.length; i++){
+        tags.add(record.tags[i].toString());
+      }
+    }
+
+    TextEditingController _textController = new TextEditingController();
 
     return Dismissible(
       key: Key(record.name),
@@ -141,27 +150,102 @@ class _ListsPageState extends State<ListsPage> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         child: ListTile(
           title: Text(record.name),
-          subtitle: Text(newFormat.format(DateTime.parse(record.dateFin.toDate().toString()))), //Niveau List
-          //subtitle: Text(newFormat.format(DateTime.parse(record.dateFin.toDate().toString()))),
-          // leading: Checkbox(
-          //    // value: record..checked,
-          //     onChanged: (bool newValue) {
-          //       setState(() {
-          //         record.reference.updateData({'checked': newValue});
-          //       });
-          //     }),
+          subtitle: Text(endDate), //Niveau List
           trailing: Wrap(
             spacing: 30,
             children: <Widget>[
+              IconButton(
+                icon: Icon(
+                    Icons.label_outlined,
+                    color: Colors.black,
+                ),
+                onPressed: (){
+                  showDialog(
+                      context: context,
+                      builder: (BuildContext context)
+                  {
+                    return StatefulBuilder(
+                        builder: (context, setState) {
+                          return AlertDialog(
+                              title: Text("Modifier les tags"),
+                              content:
+                              Wrap(
+                                  spacing: 20,
+                                  runSpacing: 20,
+                                  children: [
+                                    FlutterTagView(
+                                      tags: tags,
+                                      maxTagViewHeight: 100,
+                                      deletableTag: true,
+                                      onDeleteTag: (i) {
+                                        tags.removeAt(i);
+                                        record.reference.update({"tags": tags});
+                                        setState(() {});
+                                      },
+                                      /*tagTitle: FlutterTagView.tagTitle,*/
+                                    ),
+                                    TextField(
+                                      controller: _textController,
+                                      decoration: InputDecoration(
+                                        hintText: 'Nouveau tag',
+                                      ),
+                                      onSubmitted: (String value) {
+                                        tags.add(value);
+                                        _textController.clear();
+                                        setState(() {});
+                                      },
+                                    ),
+                                  ]),
+                              actions: <Widget>[
+                                FlatButton(
+                                  onPressed: () {
+                                    if(_textController.text.toString() != ''){
+                                      tags.add(_textController.text.toString());
+                                      _textController.clear();
+                                      setState(() {});
+                                    }
+                                  }, child: Text("Ajouter"))
+                              ],
+                          );
+                      });
+                  });
+                },
+              ),
               IconButton(
                 icon: Icon(
                   Icons.delete,
                   color: Colors.red,
                 ),
                 onPressed: () {
-                  setState(() {
-                    record.reference.delete();
-                  });
+                  showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return AlertDialog(
+                          title: Text("Etes-vous sûr de vouloir supprimer la tâche ?"),
+                          actions: <Widget>[
+                            FlatButton(
+                                color: Colors.red,
+                                textColor: Colors.white,
+                                child: Text("NON"),
+                                onPressed: () {
+                                  setState(() {
+                                    Navigator.pop(context);
+                                  });
+                                }),
+                            FlatButton(
+                                color: Colors.green,
+                                textColor: Colors.white,
+                                child: Text("OUI"),
+                                onPressed: () {
+                                  setState(() {
+                                    record.reference.delete();
+                                    Navigator.pop(context);
+                                  });
+                                })
+                          ],
+                        );
+                      }
+                  );
                 },
               ),
             ],
@@ -178,23 +262,23 @@ class _ListsPageState extends State<ListsPage> {
                       runSpacing: 20,
                       children :[
                         TextField(
-                      controller: TextEditingController()..text = record.name,
-                      onChanged: (String value) {
-                        record.reference.updateData({"name": value});
-                      },
-                    ),
+                          controller: TextEditingController()..text = record.name,
+                          onChanged: (String value) {
+                            record.reference.update({"name": value});
+                          },
+                        ),
                         Text("Date limite"),
                         DateTimeFormField(
-                            initialValue: DateTime.parse(record.dateFin.toDate().toString()),
+                            initialValue: record.dateFin != null ? DateTime.parse(record.dateFin.toDate().toString()) : null,
                             onDateSelected: (DateTime date) {
                               setState(() {
                                 selectedDate = date;
                                 dateAsTimeStamp = Timestamp.fromDate(date);
                                 record.reference
-                                    .updateData({"endDate": dateAsTimeStamp});
+                                    .update({"endDate": dateAsTimeStamp});
                               });
-                            })
-                    ]
+                        })
+                      ]
                     ),
                     actions: <Widget>[
                       FlatButton(onPressed: () {
@@ -215,10 +299,36 @@ class _ListsPageState extends State<ListsPage> {
           },
         ),
       ),
-      onDismissed: (direction) {
-        if(direction == DismissDirection.startToEnd){
-          record.reference.delete();
-        }
+      confirmDismiss: (DismissDirection direction) async {
+        return await showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: Text("Etes-vous sûr de vouloir supprimer la tâche ?"),
+                actions: <Widget>[
+                  FlatButton(
+                      color: Colors.red,
+                      textColor: Colors.white,
+                      child: Text("NON"),
+                      onPressed: () {
+                        setState(() {
+                          Navigator.pop(context);
+                        });
+                      }),
+                  FlatButton(
+                      color: Colors.green,
+                      textColor: Colors.white,
+                      child: Text("OUI"),
+                      onPressed: () {
+                        setState(() {
+                          record.reference.delete();
+                          Navigator.pop(context);
+                        });
+                      })
+                ],
+              );
+            }
+        );
       },
     );
   }
@@ -241,6 +351,7 @@ class _TodosPageState extends State<TodosPage> {
   Timestamp inputDate;
   DateTime selectedDate;
   Timestamp dateAsTimeStamp;
+
   @override
   void initState() {
     super.initState();
@@ -277,7 +388,6 @@ class _TodosPageState extends State<TodosPage> {
                   ),
                   Text("Date limite"),
                   DateTimeFormField(
-                    initialValue: DateTime(DateTime.now().year),
                     onDateSelected: (DateTime date) {
                       setState(() {
                         selectedDate = date;
@@ -285,19 +395,19 @@ class _TodosPageState extends State<TodosPage> {
                     },
                   )
                 ]),
-                      actions: <Widget>[
-                        FlatButton(
-                          onPressed: () {
-                            Navigator.of(context).pop();
-
-                            record.reference.collection('todos').add({
-                                  'name': newValue,
-                                  'checked': false
-                                });
-                            },
-                          child: Text("Ajouter")
-                        )
-                      ],
+                  actions: <Widget>[
+                    FlatButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        record.reference.collection('todos').add({
+                              'name': newValue,
+                              'checked': false,
+                              'endDate': selectedDate
+                            });
+                        },
+                      child: Text("Ajouter")
+                    )
+                  ],
                   );
                 },
             );
@@ -331,6 +441,7 @@ class _TodosPageState extends State<TodosPage> {
   Widget _buildListItem(BuildContext context, DocumentSnapshot data) {
     DateFormat newFormat = DateFormat("dd.MM.yyyy");
     final record = TodoRecord.fromSnapshot(data);
+    String endDate = record.endDate != null ? newFormat.format(DateTime.parse(record.endDate.toDate().toString())) : '';
 
       return Dismissible(
           key: Key(record.name),
@@ -342,13 +453,13 @@ class _TodosPageState extends State<TodosPage> {
             BorderRadius.circular(8)),
             child: ListTile(
               title: Text(record.name),
-              subtitle: Text(newFormat.format(DateTime.parse(record.endDate.toDate().toString()))), //Niveau tâche ?
+              subtitle: Text(endDate), //Niveau tâche ?
               trailing: Wrap(
                 spacing: 30,
                 children: <Widget>[
                   Checkbox(value: record.checked, onChanged: (bool newValue) {
                     setState(() {
-                     record.reference.updateData({'checked': newValue});
+                     record.reference.update({'checked': newValue});
                     });
                   }),
                   IconButton(
@@ -357,9 +468,35 @@ class _TodosPageState extends State<TodosPage> {
                       color: Colors.red,
                     ),
                     onPressed: () {
-                      setState(() {
-                        record.reference.delete();
-                      });
+                    showDialog(
+                      context: context,
+                        builder: (BuildContext context) {
+                      return AlertDialog(
+                        title: Text("Etes-vous sûr de vouloir supprimer la tâche ?"),
+                        actions: <Widget>[
+                          FlatButton(
+                              color: Colors.red,
+                              textColor: Colors.white,
+                              child: Text("NON"),
+                              onPressed: () {
+                                setState(() {
+                                  Navigator.pop(context);
+                                });
+                              }),
+                          FlatButton(
+                              color: Colors.green,
+                              textColor: Colors.white,
+                              child: Text("OUI"),
+                              onPressed: () {
+                                setState(() {
+                                  record.reference.delete();
+                                  Navigator.pop(context);
+                                });
+                              })
+                        ],
+                      );
+                      }
+                   );
                     },
                   ),
                 ],
@@ -380,18 +517,18 @@ class _TodosPageState extends State<TodosPage> {
                             controller: TextEditingController()
                               ..text = record.name,
                             onChanged: (String value) {
-                              record.reference.updateData({"name": value});
+                              record.reference.update({"name": value});
                             },
                           ),
                           Text("Date limite"),
                           DateTimeFormField(
-                              initialValue: DateTime.parse(record.endDate.toDate().toString()),
+                              initialValue: record.endDate != null ? DateTime.parse(record.endDate.toDate().toString()) : null,
                               onDateSelected: (DateTime date) {
                                 setState(() {
                                   selectedDate = date;
                                   dateAsTimeStamp = Timestamp.fromDate(date);
                                   record.reference
-                                      .updateData({"endDate": dateAsTimeStamp});
+                                      .update({"endDate": dateAsTimeStamp});
                                 });
                               })
                         ],
@@ -411,10 +548,36 @@ class _TodosPageState extends State<TodosPage> {
           },
         ),
       ),
-      onDismissed: (direction) {
-        if (direction == DismissDirection.startToEnd) {
-          record.reference.delete();
-        }
+      confirmDismiss: (DismissDirection direction) async {
+        return await showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: Text("Etes-vous sûr de vouloir supprimer la tâche ?"),
+                actions: <Widget>[
+                  FlatButton(
+                      color: Colors.red,
+                      textColor: Colors.white,
+                      child: Text("NON"),
+                      onPressed: () {
+                        setState(() {
+                          Navigator.pop(context);
+                        });
+                      }),
+                  FlatButton(
+                      color: Colors.green,
+                      textColor: Colors.white,
+                      child: Text("OUI"),
+                      onPressed: () {
+                        setState(() {
+                          record.reference.delete();
+                          Navigator.pop(context);
+                        });
+                      })
+                ],
+              );
+            }
+        );
       },
     );
   }
@@ -424,15 +587,15 @@ class ListRecord {
   String name;
   String color;
   Timestamp dateFin;
+  List<dynamic> tags = new List();
   final DocumentReference reference;
 
   ListRecord.fromMap(Map<String, dynamic> map, {this.reference})
       : assert(map['name'] != null),
-        //assert(map['color'] != null),
-        //assert(map['date_fin'] != null),
         name = map['name'],
         color = map['color'],
-        dateFin = map['endDate'];
+        dateFin = map['endDate'],
+        tags = map['tags'];
 
   ListRecord.fromSnapshot(DocumentSnapshot snapshot)
       : this.fromMap(snapshot.data(), reference: snapshot.reference);
