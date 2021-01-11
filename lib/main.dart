@@ -217,9 +217,35 @@ class _ListsPageState extends State<ListsPage> {
                   color: Colors.red,
                 ),
                 onPressed: () {
-                  setState(() {
-                    record.reference.delete();
-                  });
+                  showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return AlertDialog(
+                          title: Text("Etes-vous sûr de vouloir supprimer la tâche ?"),
+                          actions: <Widget>[
+                            FlatButton(
+                                color: Colors.red,
+                                textColor: Colors.white,
+                                child: Text("NON"),
+                                onPressed: () {
+                                  setState(() {
+                                    Navigator.pop(context);
+                                  });
+                                }),
+                            FlatButton(
+                                color: Colors.green,
+                                textColor: Colors.white,
+                                child: Text("OUI"),
+                                onPressed: () {
+                                  setState(() {
+                                    record.reference.delete();
+                                    Navigator.pop(context);
+                                  });
+                                })
+                          ],
+                        );
+                      }
+                  );
                 },
               ),
             ],
@@ -273,10 +299,36 @@ class _ListsPageState extends State<ListsPage> {
           },
         ),
       ),
-      onDismissed: (direction) {
-        if(direction == DismissDirection.startToEnd){
-          record.reference.delete();
-        }
+      confirmDismiss: (DismissDirection direction) async {
+        return await showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: Text("Etes-vous sûr de vouloir supprimer la tâche ?"),
+                actions: <Widget>[
+                  FlatButton(
+                      color: Colors.red,
+                      textColor: Colors.white,
+                      child: Text("NON"),
+                      onPressed: () {
+                        setState(() {
+                          Navigator.pop(context);
+                        });
+                      }),
+                  FlatButton(
+                      color: Colors.green,
+                      textColor: Colors.white,
+                      child: Text("OUI"),
+                      onPressed: () {
+                        setState(() {
+                          record.reference.delete();
+                          Navigator.pop(context);
+                        });
+                      })
+                ],
+              );
+            }
+        );
       },
     );
   }
@@ -416,9 +468,35 @@ class _TodosPageState extends State<TodosPage> {
                       color: Colors.red,
                     ),
                     onPressed: () {
-                      setState(() {
-                        record.reference.delete();
-                      });
+                    showDialog(
+                      context: context,
+                        builder: (BuildContext context) {
+                      return AlertDialog(
+                        title: Text("Etes-vous sûr de vouloir supprimer la tâche ?"),
+                        actions: <Widget>[
+                          FlatButton(
+                              color: Colors.red,
+                              textColor: Colors.white,
+                              child: Text("NON"),
+                              onPressed: () {
+                                setState(() {
+                                  Navigator.pop(context);
+                                });
+                              }),
+                          FlatButton(
+                              color: Colors.green,
+                              textColor: Colors.white,
+                              child: Text("OUI"),
+                              onPressed: () {
+                                setState(() {
+                                  record.reference.delete();
+                                  Navigator.pop(context);
+                                });
+                              })
+                        ],
+                      );
+                      }
+                   );
                     },
                   ),
                 ],
@@ -470,10 +548,36 @@ class _TodosPageState extends State<TodosPage> {
           },
         ),
       ),
-      onDismissed: (direction) {
-        if (direction == DismissDirection.startToEnd) {
-          record.reference.delete();
-        }
+      confirmDismiss: (DismissDirection direction) async {
+        return await showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: Text("Etes-vous sûr de vouloir supprimer la tâche ?"),
+                actions: <Widget>[
+                  FlatButton(
+                      color: Colors.red,
+                      textColor: Colors.white,
+                      child: Text("NON"),
+                      onPressed: () {
+                        setState(() {
+                          Navigator.pop(context);
+                        });
+                      }),
+                  FlatButton(
+                      color: Colors.green,
+                      textColor: Colors.white,
+                      child: Text("OUI"),
+                      onPressed: () {
+                        setState(() {
+                          record.reference.delete();
+                          Navigator.pop(context);
+                        });
+                      })
+                ],
+              );
+            }
+        );
       },
     );
   }
