@@ -21,7 +21,6 @@ class AuthenticationPage extends StatelessWidget {
     try {
       await FirebaseAuth.instance.createUserWithEmailAndPassword(
           email: data.name, password: data.password);
-      print(FirebaseAuth.instance.currentUser.uid);
       return Future.delayed(loginTime);
     } on FirebaseAuthException catch (e) {
       if (e.code =='weak-password') {
@@ -32,11 +31,20 @@ class AuthenticationPage extends StatelessWidget {
     }
   }
 
-  Future<String> _recoverPassword(String name) {
-    return Future.delayed(loginTime).then((_) {
-        return 'Fonction non implémenté';
-
-    });
+  Future<String> _recoverPassword(String name) async {
+    try {
+      await FirebaseAuth.instance.createUserWithEmailAndPassword(
+          email: name, password: 'noSuchAccount');
+      FirebaseAuth.instance.currentUser.delete();
+      return('Cet email n\'a pas de compte assigné');
+    } on FirebaseAuthException catch (e) {
+      if (e.code =='weak-password') {
+        return('the password provided is too weak');
+      } else if (e.code == 'emai-already-in-use') {
+        await FirebaseAuth.instance.sendPasswordResetEmail(email: name);
+        return('un email avec votre mot de passe a été envoyé');
+      }
+    }
   }
 
   @override
