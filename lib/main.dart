@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:date_field/date_field.dart';
+import 'package:flutter_todolist/authentication.dart';
 import 'package:intl/intl.dart';
 
 import 'flutter_tag_view.dart';
@@ -27,14 +28,15 @@ class MyApp extends StatelessWidget {
         primaryColor: Colors.blue,
         accentColor: Colors.green,
       ),
-      home: ListsPage(title: 'Mes listes'),
+      home: AuthenticationPage(),
     );
   }
 }
 
 class ListsPage extends StatefulWidget {
-  ListsPage({Key key, this.title}) : super(key: key);
+  ListsPage({Key key, this.title, this.userid,}) : super(key: key);
   final String title;
+  final String userid;
 
   @override
   _ListsPageState createState() => _ListsPageState();
@@ -55,7 +57,28 @@ class _ListsPageState extends State<ListsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(title: Text('Mes listes')),
+        appBar: AppBar(title: Text('Mes listes'),
+          automaticallyImplyLeading: false,
+          actions: <Widget>[
+            Padding(
+              padding: EdgeInsets.only(top:10, bottom: 10, right:10),
+              child: ElevatedButton(
+                style: ButtonStyle(
+                  backgroundColor: MaterialStateProperty.all<Color>(Colors.white),
+                  foregroundColor: MaterialStateProperty.all<Color>(Colors.black)
+                ),
+                child: Text("Se déconnecter"),
+                onPressed: () {
+                  setState(() {
+                    Navigator.of(context).pushReplacement(MaterialPageRoute(
+                      builder: (context) => AuthenticationPage(),
+                    ));
+                  });
+                },
+              ),
+            ),
+          ],
+        ),
         floatingActionButton: _floatingAddButton(),
         body: _buildBody(context));
   }
@@ -95,7 +118,8 @@ class _ListsPageState extends State<ListsPage> {
                         Navigator.of(context).pop();
                         FirebaseFirestore.instance.collection('todolists').add({ //liste de todo
                           'name': newValue,
-                          'endDate': selectedDate
+                          'endDate': selectedDate,
+                          'userid' : this.widget.userid
                         });
                       },
                       child: Text("Ajouter"))
@@ -115,8 +139,14 @@ class _ListsPageState extends State<ListsPage> {
       stream: FirebaseFirestore.instance.collection('todolists').snapshots(),
       builder: (context, snapshot) {
         if (!snapshot.hasData) return LinearProgressIndicator();
+        List<QueryDocumentSnapshot> snapshotUser = new List<QueryDocumentSnapshot>();
 
-        return _buildList(context, snapshot.data.documents);
+        for(QueryDocumentSnapshot queryDocumentSnapshot in snapshot.data.docs ) {
+          if(queryDocumentSnapshot.get("userid") == this.widget.userid) {
+            snapshotUser.add(queryDocumentSnapshot);
+          }
+        }
+        return _buildList(context, snapshotUser);
       },
     );
   }
@@ -269,7 +299,7 @@ class _ListsPageState extends State<ListsPage> {
                         ),
                         Text("Date limite"),
                         DateTimeFormField(
-                            initialValue: record.dateFin != null ? DateTime.parse(record.dateFin.toDate().toString()) : null,
+                            initialValue: DateTime.now(),//record.dateFin != null ? DateTime.parse(record.dateFin.toDate().toString()) : DateTime.now(),
                             onDateSelected: (DateTime date) {
                               setState(() {
                                 selectedDate = date;
@@ -426,7 +456,7 @@ class _TodosPageState extends State<TodosPage> {
       builder: (context, snapshot) {
         if (!snapshot.hasData) return LinearProgressIndicator();
 
-        return _buildList(context, snapshot.data.documents);
+        return _buildList(context, snapshot.data.docs);
       },
     );
   }
